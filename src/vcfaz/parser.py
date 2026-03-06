@@ -7,10 +7,7 @@ import os
 import re
 import sys
 
-try:
-    from collections import OrderedDict
-except ImportError:
-    from ordereddict import OrderedDict
+from collections import OrderedDict
 
 try:
     import pysam
@@ -18,12 +15,12 @@ except ImportError:
     pysam = None
 
 try:
-    import cparse
+    from . import cparse
 except ImportError:
     cparse = None
 
-from model import _Call, _Record, make_calldata_tuple
-from model import _Substitution, _Breakend, _SingleBreakend, _SV
+from .model import _Call, _Record, make_calldata_tuple
+from .model import _Substitution, _Breakend, _SingleBreakend, _SV
 
 
 # Metadata parsers/constants
@@ -266,8 +263,7 @@ class Reader(object):
         self.filename = filename
         if compressed:
             self._reader = gzip.GzipFile(fileobj=self._reader)
-            if sys.version > '3':
-                self._reader = codecs.getreader(encoding)(self._reader)
+            self._reader = codecs.getreader(encoding)(self._reader)
 
         if strict_whitespace:
             self._separator = '\t'
@@ -275,7 +271,7 @@ class Reader(object):
             self._separator = '\t| +'
 
         self._row_pattern = re.compile(self._separator)
-        self._alt_pattern = re.compile('[\[\]]')
+        self._alt_pattern = re.compile(r'[\[\]]')
 
         self.reader = (line.strip() for line in self._reader if line.strip())
 
@@ -421,7 +417,7 @@ class Reader(object):
                     ##justkeep it and change type into String
                     entry_type == 'String'
                     vals = entry[1].split(',') #commas are reserved characters indicating multiple value
-                    val = self._map(str, val)
+                    val = self._map(str, vals)
                 elif "|" in entry[1]:
                     entry_type == 'String'
                     vals = entry[1].split('|')
@@ -433,14 +429,14 @@ class Reader(object):
                 elif entry[1] == '':
                     val = ''
                 else:
-                    ## try to treat as real Flota but it fails switchagain  to string
+                    ## try to treat as real Float but if it fails switch to string
                     try:
                         vals = entry[1].split(',')
                         val = self._map(float, vals)
                     except:
                         entry_type == 'String'
                         vals = entry[1].split(',') #commas are reserved characters indicating multiple value
-                        val = self._map(str, val)
+                        val = self._map(str, vals)
             elif entry_type == 'Flag':
                 val = True
             #elif entry_type in ('String', 'Character'):
@@ -460,7 +456,7 @@ class Reader(object):
 
             ## Modify by Zauli (merge multiple effect EFF fileds into a single one)
             ## merge only if val is a list
-            if retdict.has_key(ID) and type(val) == type([]):
+            if ID in retdict and type(val) == type([]):
                 retdict[ID] = set(retdict[ID])
                 retdict[ID] = retdict[ID].union(val)
                 retdict[ID] = list(retdict[ID])
@@ -510,7 +506,7 @@ class Reader(object):
 
         nfields = len(samp_fmt._fields)
 
-        for name, sample in itertools.izip(self.samples, samples):
+        for name, sample in zip(self.samples, samples):
 
             # parse the data for this sample
             sampdat = [None] * nfields
@@ -577,7 +573,7 @@ class Reader(object):
                 withinMainAssembly = True
             pos = remoteCoords[1]
             orientation = (str[0] == '[' or str[0] == ']')
-            remoteOrientation = (re.search('\[', str) is not None)
+            remoteOrientation = (re.search(r'\[', str) is not None)
             if orientation:
                 connectingSequence = items[2]
             else:
@@ -592,7 +588,7 @@ class Reader(object):
         else:
             return _Substitution(str)
 
-    def next(self):
+    def __next__(self):
         '''Return the next record in the file.'''
         line = next(self.reader)
         row = self._row_pattern.split(line.rstrip())
@@ -643,6 +639,9 @@ class Reader(object):
 
         return record
 
+    # backwards compatibility alias
+    next = __next__
+
     def fetch(self, chrom, start=None, end=None):
         """ Fetches records from a tabix-indexed VCF file and returns an
             iterable of ``_Record`` instances
@@ -684,16 +683,6 @@ class Reader(object):
         if self._prepend_chr and chrom[:3] == 'chr':
             chrom = chrom[3:]
 
-#        # not sure why tabix needs position -1
-#        start = start - 1
-#
-#        if end is None:
-#            self.reader = self._tabix.fetch(chrom, start, start + 1)
-#            try:
-#                return self.next()
-#            except StopIteration:
-#                return None
-
         self.reader = self._tabix.fetch(chrom, start, end)
         return self
 
@@ -702,7 +691,7 @@ class Writer(object):
     """VCF Writer. On Windows Python 2, open stream with 'wb'."""
 
     # Reverse keys and values in header field count dictionary
-    counts = dict((v,k) for k,v in field_counts.iteritems())
+    counts = dict((v, k) for k, v in field_counts.items())
 
     def __init__(self, stream, template, lineterminator="\n"):
         self.writer = csv.writer(stream, delimiter="\t",
@@ -715,12 +704,12 @@ class Writer(object):
         # get a maximum key).
         self.info_order = collections.defaultdict(
             lambda: len(template.infos),
-            dict(zip(template.infos.iterkeys(), itertools.count())))
+            dict(zip(template.infos.keys(), itertools.count())))
 
         two = '##{key}=<ID={0},Description="{1}">\n'
         four = '##{key}=<ID={0},Number={num},Type={2},Description="{3}">\n'
         _num = self._fix_field_count
-        for (key, vals) in template.metadata.iteritems():
+        for (key, vals) in template.metadata.items():
             if key in SINGULAR_METADATA:
                 vals = [vals]
             for val in vals:
@@ -730,15 +719,15 @@ class Writer(object):
                     stream.write('##{0}=<{1}>\n'.format(key, values))
                 else:
                     stream.write('##{0}={1}\n'.format(key, val))
-        for line in template.infos.itervalues():
+        for line in template.infos.values():
             stream.write(four.format(key="INFO", *line, num=_num(line.num)))
-        for line in template.formats.itervalues():
+        for line in template.formats.values():
             stream.write(four.format(key="FORMAT", *line, num=_num(line.num)))
-        for line in template.filters.itervalues():
+        for line in template.filters.values():
             stream.write(two.format(key="FILTER", *line))
-        for line in template.alts.itervalues():
+        for line in template.alts.values():
             stream.write(two.format(key="ALT", *line))
-        for line in template.contigs.itervalues():
+        for line in template.contigs.values():
             if line.length:
                 stream.write('##contig=<ID={0},length={1}>\n'.format(*line))
             else:
@@ -827,11 +816,6 @@ class Writer(object):
         '''``map``, but make None values none.'''
         return [func(x) if x is not None else none
                 for x in iterable]
-
-
-def __update_readme():
-    import sys, vcf
-    file('README.rst', 'w').write(vcf.__doc__)
 
 
 # backwards compatibility

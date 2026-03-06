@@ -49,7 +49,7 @@ def walk_together(*readers, **kwargs):
 
         for i in min_k_idxs:
             try:
-                nexts[i] = readers[i].next()
+                nexts[i] = next(readers[i])
             except StopIteration:
                 nexts[i] = None
 
