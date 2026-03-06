@@ -7,7 +7,7 @@ import sys
 import warnings
 
 
-from parser import Reader, Writer
+from .parser import Reader, Writer
 
 
 class SampleFilter(object):
@@ -87,7 +87,7 @@ class SampleFilter(object):
             warnings.warn("Invalid filters, ignoring", RuntimeWarning)
 
         if self.invert:
-            filters = set(xrange(len(self.samples))).difference(filters)
+            filters = set(range(len(self.samples))).difference(filters)
 
         # `sample_filter` setter updates `samples`
         self.parser.sample_filter = filters

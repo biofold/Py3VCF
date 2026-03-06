@@ -3,10 +3,7 @@ import collections
 import sys
 import re
 
-try:
-    from collections import Counter
-except ImportError:
-    from counter import Counter
+from collections import Counter
 
 allele_delimiter = re.compile(r'''[|/]''') # to split a genotype into alleles
 
@@ -238,11 +235,6 @@ class _Record(object):
         return (start, end)
 
 
-    # For Python 2
-    def __cmp__(self, other):
-        return cmp((self.CHROM, self.POS), (getattr(other, "CHROM", None), getattr(other, "POS", None)))
-
-    # For Python 3
     def __eq__(self, other):
         """ _Records are equal if they describe the same variant (same position, alleles) """
         return (self.CHROM == getattr(other, "CHROM", None) and
@@ -250,7 +242,6 @@ class _Record(object):
                 self.REF == getattr(other, "REF", None) and
                 self.ALT == getattr(other, "ALT", None))
 
-    # For Python 3
     def __lt__(self, other):
         return (self.CHROM, self.POS) < (getattr(other, "CHROM", None), getattr(other, "POS", None))
 
@@ -537,9 +528,8 @@ class _Record(object):
         return len(self.ALT) == 1 and self.ALT[0] is None
 
 
-class _AltRecord(object):
+class _AltRecord(object, metaclass=ABCMeta):
     '''An alternative allele record: either replacement string, SV placeholder, or breakend'''
-    __metaclass__ = ABCMeta
 
     def __init__(self, type, **kwargs):
         super(_AltRecord, self).__init__(**kwargs)
@@ -575,7 +565,7 @@ class _Substitution(_AltRecord):
         return len(self.sequence)
 
     def __eq__(self, other):
-        if isinstance(other, basestring):
+        if isinstance(other, str):
             return self.sequence == other
         elif not isinstance(other, self.__class__):
             return False
