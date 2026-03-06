@@ -1,0 +1,27 @@
+package:
+  name: pyvcfaz
+  version: '0.6.8'
+
+source:
+  fn: PyVCF_az-0.6.8.tar.gz
+
+build:
+  number: 0
+
+requirements:
+  build:
+    - python
+    - setuptools
+
+  run:
+    - python
+
+test:
+  imports:
+    - vcfaz.test
+    - vcfaz
+
+about:
+  home: https://github.com/andreazauli/PyVCF_az
+  license: MIT
+  summary: A Variant Call Format reader for Python

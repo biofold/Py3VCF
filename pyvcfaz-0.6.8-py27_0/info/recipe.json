@@ -1,0 +1,47 @@
+{
+  "about": {
+    "home": "https://github.com/jamescasbon/PyVCF",
+    "license": "BSD",
+    "summary": "A Variant Call Format reader for Python"
+  },
+  "app": {},
+  "build": {
+    "entry_points": [],
+    "features": [],
+    "number": "0",
+    "pin_depends": "",
+    "script_env": [],
+    "string": "",
+    "track_features": []
+  },
+  "package": {
+    "name": "pyvcfaz",
+    "version": "0.6.8"
+  },
+  "requirements": {
+    "build": [
+      "python",
+      "setuptools"
+    ],
+    "conflicts": [],
+    "run": [
+      "python"
+    ]
+  },
+  "source": {
+    "fn": "PyVCF_az-0.6.8.tar.gz",
+    "git_rev": "",
+    "patches": [],
+    "path": "",
+    "svn_rev": "",
+  },
+  "test": {
+    "commands": [],
+    "files": [],
+    "imports": [
+      "vcfaz.test",
+      "vcfaz"
+    ],
+    "requires": []
+  }
+}
